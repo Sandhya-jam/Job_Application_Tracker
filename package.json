@@ -14,5 +14,8 @@
   "type": "module",
   "devDependencies": {
     "concurrently": "^9.2.0"
+  },
+  "dependencies": {
+    "framer-motion": "^12.23.12"
   }
 }
