@@ -1,9 +1,32 @@
 import { motion } from "framer-motion"
 import { useState } from "react"
 import { Link } from "react-router-dom"
+import {useDispatch,useSelector} from 'react-redux'
+import {useLoginMutation} from '../../Redux/api/usersApiSlice'
+import { toast } from "react-toastify"
+import {setCredientials} from '../../Redux/authSlice'
+
 const LoginPage = () => {
     const [email,setEmail]=useState("")
     const [password,setPassword]=useState("")
+    
+    const dispatch=useDispatch()
+
+    const [login,{isLoading}]=useLoginMutation()
+
+    const {userInfo}=useSelector(state=>state.auth)
+
+    const submitHandler=async(e)=>{
+      e.preventDefault();
+      try {
+        const res=await login({email,password}).unwrap()
+        dispatch(setCredientials({...res}))
+        toast.success('Login Successfull')
+      } catch (error) {
+        console.log(error)
+        toast.error(error?.data?.message || error.message)
+      }
+    }
 
   return(
     <div className="min-h-screen bg-gradient-to-r from-blue-400 to-purple-600 flex items-center justify-center p-4">
@@ -14,7 +37,8 @@ const LoginPage = () => {
     transition={{duration:0.8}}
     >
     <h2 className="text-2xl font-bold mb-6 text-center font-serif">Login to Your Account</h2>
-    <form className="space-y-4">
+    <form onSubmit={submitHandler}
+    className="space-y-4">
         <label className="text-2xl font-serif">Email</label>
         <input type="text"
         placeholder="Enter your email"
@@ -28,7 +52,10 @@ const LoginPage = () => {
         placeholder:text-gray-800 placeholder:text-lg"
         value={password} onChange={(e)=>setPassword(e.target.value)}
         />
-        <button className="w-full bg-purple-600 text-white font-semibold py-3 rounded-lg hover:bg-purple-700 transition cursor-pointer">Login</button>
+        <button 
+        type="submit"
+        className="w-full bg-purple-600 text-white font-semibold py-3 rounded-lg hover:bg-purple-700 transition cursor-pointer">
+        Login</button>
     </form>
     <p className="text-center text-lg text-gray-800 mt-4">
         Don't have an account?{" "}

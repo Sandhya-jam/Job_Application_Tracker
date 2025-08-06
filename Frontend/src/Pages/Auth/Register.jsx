@@ -1,11 +1,44 @@
 import { motion } from "framer-motion"
-import { useState } from "react"
-import { Link } from "react-router-dom"
+import { useState,useEffect } from "react"
+import { Link,redirect,useLocation,useNavigate } from "react-router-dom"
+import { setCredientials } from "../../Redux/authSlice"
+import { toast } from "react-toastify"
+import {useRegisterMutation} from '../../Redux/api/usersApiSlice'
+import { useDispatch,useSelector } from "react-redux"
+
 const Register = () => {
     const [username,setUsername]=useState("")
     const [email,setEmail]=useState("")
     const [password,setPassword]=useState("")
     const [confirmPassword,setConfirmPassword]=useState("")
+
+    const dispatch=useDispatch()
+    const navigate=useNavigate()
+
+    const [register,{isLoading}]=useRegisterMutation()
+    const {userInfo}=useSelector(state=>state.auth)
+
+    const submitHandler=async(e)=>{
+       e.preventDefault()
+       if(password!==confirmPassword){
+        toast.error('Password do not match')
+       }else{
+         try {
+            const res=await register({username,email,password}).unwrap()
+            dispatch(setCredientials({...res}))
+            toast.success('User Successfully registered')
+         } catch (error) {
+           console.log(error)
+           toast.error(error?.data?.message || 'Registration failed')
+         }
+       }
+    }
+
+    // useEffect(()=>{
+    //   if(userInfo){
+    //      navigate('/')
+    //   }
+    // },[redirect,userInfo])
 
   return (
     <div className="min-h-screen bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center p-4">
@@ -16,7 +49,8 @@ const Register = () => {
         className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8"
         >
         <h2 className="text-2xl font-bold mb-6 text-center">Create Account</h2>
-        <form className="space-y-4">
+        <form onSubmit={submitHandler}
+        className="space-y-4">
           <label className="text-lg">Username</label>
           <input 
           type="text" 
@@ -43,7 +77,7 @@ const Register = () => {
           value={confirmPassword} onChange={(e)=>setConfirmPassword(e.target.value)}/>
           <button
             type="submit"
-            className="w-full bg-pink-600 text-white font-semibold py-3 rounded-lg hover:bg-pink-700 transition"
+            className="w-full bg-pink-600 text-white font-semibold py-3 rounded-lg hover:bg-pink-700 transition hover:cursor-pointer"
           >
            Register
           </button>
