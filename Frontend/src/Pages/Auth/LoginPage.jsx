@@ -1,6 +1,6 @@
 import { motion } from "framer-motion"
-import { useState } from "react"
-import { Link } from "react-router-dom"
+import { useEffect, useState } from "react"
+import { Link, useNavigate } from "react-router-dom"
 import {useDispatch,useSelector} from 'react-redux'
 import {useLoginMutation} from '../../Redux/api/usersApiSlice'
 import { toast } from "react-toastify"
@@ -11,7 +11,7 @@ const LoginPage = () => {
     const [password,setPassword]=useState("")
     
     const dispatch=useDispatch()
-
+    const navigate=useNavigate()
     const [login,{isLoading}]=useLoginMutation()
 
     const {userInfo}=useSelector(state=>state.auth)
@@ -27,6 +27,12 @@ const LoginPage = () => {
         toast.error(error?.data?.message || error.message)
       }
     }
+
+    useEffect(()=>{
+      if(userInfo){
+        navigate('/dashboard')
+      }
+    },[navigate,userInfo])
 
   return(
     <div className="min-h-screen bg-gradient-to-r from-blue-400 to-purple-600 flex items-center justify-center p-4">
