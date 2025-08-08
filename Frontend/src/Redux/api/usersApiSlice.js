@@ -33,7 +33,8 @@ export const userApiSlice=apiSlice.injectEndpoints({
         updateProfile:builder.mutation({
             query:(data)=>({
                 url:`${USER_URL}/profile`,
-                method:'PUT'
+                method:'PUT',
+                body:data
             }),
             invalidatesTags:['Profile']
         })

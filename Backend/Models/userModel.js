@@ -14,6 +14,20 @@ const userSchema=mongoose.Schema({
         type:String,
         required:true,
         minlength:6
+    },
+    joined:{
+        type:Date,
+        default:Date.now()
+    },
+    role:{
+        type:String,
+        required:true
+    },
+    bio:{
+        type:String,
+    },
+    location:{
+        type:String,
     }
 },{timestamps:true});
 

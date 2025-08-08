@@ -4,9 +4,9 @@ import User from "../Models/userModel.js"
 import createToken from '../Utils/createToken.js'
 
 const createUser=asyncHandler(async(req,res)=>{
-    const {username,email,password}=req.body;
+    const {username,email,password,role,bio,location}=req.body;
 
-    if(!username || !email || !password){
+    if(!username || !email || !password || !role){
         throw new Error('Please Fill all fields')
     }
 
@@ -16,12 +16,19 @@ const createUser=asyncHandler(async(req,res)=>{
     const salt=await bycrypt.genSalt(10)
     const hashPass=await bycrypt.hash(password,salt)
 
-    const newUser=new User({username,email,password:hashPass})
+    const newUser=new User({username,email,password:hashPass,role,joined:Date.now(),bio,location})
 
     try {
         await newUser.save()
         createToken(res,newUser._id)
-        res.status(200).json({_id:newUser._id,username:newUser.username,email:newUser.email})
+        res.status(200).json({_id:newUser._id,
+            username:newUser.username,
+            email:newUser.email,
+            role:newUser.role,
+            joined:newUser.joined,
+            bio:newUser.bio,
+            location:newUser.location
+        })
     } catch (error) {
       res.status(400)
       throw new Error('Invalid user data')   
@@ -42,7 +49,14 @@ const loginUser=asyncHandler(async(req,res)=>{
         if(isPassValid){
             createToken(res,existingUser._id)
 
-            res.status(200).json({_id:existingUser._id,username:existingUser.username,email:existingUser.email})
+            res.status(200).json({_id:existingUser._id,
+                username:existingUser.username,
+                email:existingUser.email,
+                role:existingUser.role,
+                joined:existingUser.joined,
+                bio:existingUser.bio,
+                location:existingUser.location
+            })
 
             return;
         }else{
@@ -67,7 +81,11 @@ const getProfile=asyncHandler(async(req,res)=>{
         res.json({
             _id:user._id,
             username:user.username,
-            email:user.email
+            email:user.email,
+            role:user.role,
+            joined:user.joined,
+            bio:user.bio,
+            location:user.location
         })
     }else{
         res.status(404)
@@ -81,7 +99,9 @@ const updateProfile=asyncHandler(async(req,res)=>{
     if(user){
         user.username=req.body.username || user.username
         user.email=req.body.email || user.email
-
+        user.role=req.body.role || user.role
+        user.bio=req.body.bio || user.bio
+        user.location=req.body.location || user.location
         if(req.body.password){
             const salt=await bycrypt.genSalt(10)
             const hashPass=await bycrypt.hash(req.body.password,salt)
@@ -94,6 +114,9 @@ const updateProfile=asyncHandler(async(req,res)=>{
             _id:updatedUser._id,
             username:updatedUser.username,
             email:updatedUser.email,
+            role:updatedUser.role,
+            bio:updatedUser.bio,
+            location:updatedUser.location
         });
     }else{
         res.status(404)

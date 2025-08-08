@@ -14,7 +14,7 @@ const LoginPage = () => {
     const navigate=useNavigate()
     const [login,{isLoading}]=useLoginMutation()
 
-    const {userInfo}=useSelector(state=>state.auth)
+    const {userInfoJ}=useSelector(state=>state.auth)
 
     const submitHandler=async(e)=>{
       e.preventDefault();
@@ -29,10 +29,10 @@ const LoginPage = () => {
     }
 
     useEffect(()=>{
-      if(userInfo){
+      if(userInfoJ){
         navigate('/dashboard')
       }
-    },[navigate,userInfo])
+    },[navigate,userInfoJ])
 
   return(
     <div className="min-h-screen bg-gradient-to-r from-blue-400 to-purple-600 flex items-center justify-center p-4">

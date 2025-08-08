@@ -1,26 +1,56 @@
 import { motion } from "framer-motion"
 import { User,Mail,Briefcase } from "lucide-react"
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useGetProfileQuery,useUpdateProfileMutation } from "../Redux/api/usersApiSlice";
+import { toast } from "react-toastify";
+import { useDispatch,useSelector } from "react-redux";
+import {setCredientials} from '../Redux/authSlice'
 
 const Profile = () => {
-  const [user,setUser] = useState({
-    name: "John Doe",
-    email: "john.doe@example.com",
-    role: "Job Seeker",
-    bio: "Passionate software engineer with a focus on backend systems and DevOps. Always looking to learn and grow in tech.",
-    location: "San Francisco, CA",
-    joined: "January 2024",
-  });
    
    const [editing,setEditing]=useState(false)
-   const [formData,setFormData]=useState(user)
+   const [formData,setFormData]=useState({
+    username:'',
+    email:'',
+    bio:'',
+    location:'',
+    role:''
+  })
+   const {data}=useGetProfileQuery()
 
+   const [updateProfile]=useUpdateProfileMutation();
+   const dispatch=useDispatch()
+   
+   useEffect(()=>{
+     setFormData(prev=>({
+       ...prev,
+       username:data?.username,
+       email:data?.email,
+       bio:data?.bio,
+       location:data?.location,
+       role:data?.role
+     }))
+   },[data])
+   
    const handleChange=(e)=>{
       setFormData({...formData,[e.target.name]:e.target.value})
    };
 
-   const handleSave=()=>{
-     setUser(formData)
+   const handleSave=async()=>{
+     try {
+       const res=await updateProfile({
+          _id:data._id,
+          username:formData.username,
+          email:formData.email,
+          role:formData.role,
+          bio:formData.bio,
+          location:formData.location
+       }).unwrap()
+       dispatch(setCredientials({...res}))
+       toast.success('Profile updated Successfully')
+     } catch (error) {
+       toast.error(error?.data?.message || error.message)
+     }
      setEditing(false)
    };
    
@@ -39,14 +69,14 @@ const Profile = () => {
               {editing?(
                 <input
                 type="text"
-                name="name"
-                value={formData.name}
+                name="username"
+                value={formData?.username}
                 onChange={handleChange}
                 className="text-2xl font-bold text-gray-800 border-b w-full"/>
               ):(
-                <h2 className="text-2xl font-bold text-gray-800">{user.name}</h2>
+                <h2 className="text-2xl font-bold text-gray-800">{formData?.username}</h2>
               )}
-              <p className='text-sm text-gray-500'>Joined {user.joined}</p>
+              <p className='text-sm text-gray-500'>Joined {data?.joined}</p>
             </div>
             <button
             onClick={()=>(editing ? handleSave():setEditing(true))}
@@ -61,11 +91,11 @@ const Profile = () => {
                    <input
                    type="email"
                     name="email"
-                    value={formData.email}
+                    value={formData?.email}
                     onChange={handleChange}
                     className="border-b flex-1"/> 
                 ):(
-                <p className="text-gray-700">{user.email}</p>
+                <p className="text-gray-700">{formData?.email}</p>
                 )}
             </div>
 
@@ -75,12 +105,12 @@ const Profile = () => {
               <input
                 type="text"
                 name="role"
-                value={formData.role}
+                value={formData?.role}
                 onChange={handleChange}
                 className="border-b flex-1"
               />
             ) : (
-              <p className="text-gray-700">Role: {user.role}</p>
+              <p className="text-gray-700">Role: {formData?.role}</p>
             )}
           </div>
 
@@ -89,12 +119,12 @@ const Profile = () => {
             {editing ? (
               <textarea
                 name="bio"
-                value={formData.bio}
+                value={formData?.bio}
                 onChange={handleChange}
                 className="w-full border rounded-md p-2 text-sm"
               />
             ) : (
-              <p className="text-gray-600 text-sm leading-relaxed">{user.bio}</p>
+              <p className="text-gray-600 text-sm leading-relaxed">{formData?.bio}</p>
             )}
           </div>
 
@@ -104,12 +134,12 @@ const Profile = () => {
               <input
                 type="text"
                 name="location"
-                value={formData.location}
+                value={formData?.location}
                 onChange={handleChange}
                 className="border-b w-full"
               />
             ) : (
-              <p className="text-gray-600 text-sm">{user.location}</p>
+              <p className="text-gray-600 text-sm">{formData?.location}</p>
             )}
           </div>
 
