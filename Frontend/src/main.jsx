@@ -8,7 +8,7 @@ import Register from './Pages/Auth/Register.jsx'
 import { Provider } from 'react-redux'
 import store from './Redux/store.js'
 import HomePage from './Components/HomePage.jsx'
-import Dashboard from './Pages/Dashboard.jsx'
+import Dashboard from './Pages/DashBoardContents/Dashboard.jsx'
 import PrivateRoute from './Components/PrivateRoute.jsx'
 import Profile from './Components/Profile.jsx'
 const router=createBrowserRouter(

@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { motion } from "framer-motion"
-import { useLogoutMutation } from "../Redux/api/usersApiSlice"
+import { useLogoutMutation } from "../../Redux/api/usersApiSlice"
 import { useDispatch,useSelector } from "react-redux"
 import { useNavigate } from "react-router-dom"
 import { LineChart,
@@ -14,8 +14,9 @@ import { LineChart,
   Cell
  } from "recharts"
 import { Edit, Plus, Trash2, User } from "lucide-react"
-import { logout } from "../Redux/authSlice"
+import { logout } from "../../Redux/authSlice"
 import { toast } from "react-toastify"
+import CreateForm from "./CreateForm"
 const Dashboard = () => {
 
   const jobStats = [
@@ -53,6 +54,7 @@ const Dashboard = () => {
   const [search,setSearch]=useState('')
   const [filter,setFilter]=useState('All')
   const [jobs,setJobs]=useState(initialJobs)
+  const [openAdd,setOpenAdd]=useState(false)
 
   const filteredJobs = jobs.filter((job) => {
     const matchesSearch = `${job.company} ${job.position}`.toLowerCase().includes(search.toLowerCase());
@@ -76,11 +78,6 @@ const Dashboard = () => {
      }
   }
   
-  const handleAdd=()=>{
-    
-  }
-
-
   return (
     <motion.div
     initial={{opacity:0}}
@@ -177,7 +174,7 @@ const Dashboard = () => {
             <option >Rejected</option>
           </select>
           <button
-          onClick={handleAdd}
+          onClick={()=>setOpenAdd(!openAdd)}
           className="flex items-center gap-1 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 hover:cursor-pointer">
            <Plus className="w-4 h-4"/>Add Job
           </button>
@@ -224,6 +221,15 @@ const Dashboard = () => {
 
       </motion.div>
      </div>
+    {openAdd && (
+       <div className="fixed inset-0 bg-opacity-10 backdrop-blur-sm flex justify-center items-center z-50"
+       onClick={()=>setOpenAdd(false)}>
+         <div className="bg-white rounded-lg p-6 shadow-lg max-w-lg w-full"
+         onClick={(e)=>e.stopPropagation()}>
+           <CreateForm/>
+         </div>
+       </div>
+    )}
     </motion.div>
   )
 }
