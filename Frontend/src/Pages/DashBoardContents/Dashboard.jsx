@@ -14,7 +14,7 @@ import { LineChart,
   Pie,
   Cell
  } from "recharts"
-import { Edit, Plus, Trash2, User } from "lucide-react"
+import {Plus,User } from "lucide-react"
 import { logout } from "../../Redux/authSlice"
 import { toast } from "react-toastify"
 import CreateForm from "./CreateForm"
@@ -63,11 +63,13 @@ const Dashboard = () => {
   const [search,setSearch]=useState('')
   const [filter,setFilter]=useState('All')
   const [openAdd,setOpenAdd]=useState(false)
+  const [roleFilter,setRoleFilter]=useState('All')
 
   const filteredJobs = jobs?.filter((job) => {
     const matchesSearch = `${job.company} ${job.title}`.toLowerCase().includes(search.toLowerCase());
     const matchesFilter = filter === "All" || job.status === filter;
-    return matchesSearch && matchesFilter;
+    const matchesRole= roleFilter ==="All" || job.role===roleFilter;
+    return matchesSearch && matchesFilter && matchesRole;
   });
 
   const dispatch=useDispatch()
@@ -196,10 +198,18 @@ const Dashboard = () => {
           placeholder="Search Jobs.."
           className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-300"/>
           <select
+          value={roleFilter}
+          onChange={(e)=>setRoleFilter(e.target.value)}
+          className="px-3 py-2 border border-gary-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-300">
+            <option value="All">All(role)</option>
+            <option value="FTE">FTE</option>
+            <option value="Intern">Intern</option>
+          </select>
+          <select
           value={filter}
           onChange={(e)=>setFilter(e.target.value)}
           className="px-3 py-2 border border-gary-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-300">
-            <option value="All">All</option>
+            <option value="All">All(status)</option>
             <option value="Wishlist">Wishlist</option>
             <option value="Applied">Applied</option>
             <option value="Interviewing">Interviewing</option>
@@ -217,7 +227,7 @@ const Dashboard = () => {
         </div>
        </div>
         
-        <AllJobs jobs={(search === '' && filter === 'All') ? jobs : filteredJobs} />
+        <AllJobs jobs={(search === '' && filter === 'All' && roleFilter==='All') ? jobs : filteredJobs} />
 
       </motion.div>
      </div>

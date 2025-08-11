@@ -1,13 +1,14 @@
-import { useMemo, useState } from "react"
+import { useEffect,useState } from "react"
 import { Edit,Trash2,Save,X} from "lucide-react"
 import {format} from 'date-fns'
 import { motion } from "framer-motion"
 import { useDeleteMutation,useUpdateMutation } from "../../Redux/api/jobsApiSlice"
 import { toast } from "react-toastify"
 
-const AllJobs = ({jobs}) => {
+const AllJobs = ({jobs:initialJobs}) => {
   const [updateJob]=useUpdateMutation()
   const [deleteJob]=useDeleteMutation()
+  const [jobs, setJobs] = useState(initialJobs);
 
   const [selectedJob,setSelectedJob]=useState(null);
   const [isEditing,setIsEditing]=useState(false)
@@ -15,7 +16,10 @@ const AllJobs = ({jobs}) => {
   const [jobToDelete, setJobToDelete] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  
+  useEffect(() => {
+    setJobs(initialJobs);
+  }, [initialJobs])
+
   const openDetails=(job)=>{
     setSelectedJob(job)
     setIsEditing(false)
@@ -33,6 +37,12 @@ const AllJobs = ({jobs}) => {
   
   const handleStatusChange=async(jobId,newStatus)=>{
      try {
+         setJobs(prev =>
+        prev.map(job =>
+          job._id === jobId ? { ...job, status: newStatus } : job
+        )
+      );
+
         await updateJob({id:jobId,data:{status:newStatus}}).unwrap()
         toast.success("Status updated successfully!");
      } catch (error) {
@@ -40,18 +50,15 @@ const AllJobs = ({jobs}) => {
      }
   };
    
-  const handleDelete=async(job)=>{
-     try {
-        await deleteJob(job._id).unwrap()
-        toast.success("Deleted Sucessfully")
-     } catch (error) {
-        toast.error('Error deleting the job')
-     }
-  }
   const handleSave=async(e)=>{
     e.preventDefault();
     try {
         await updateJob({id:selectedJob._id,data:editForm}).unwrap()
+        setJobs(prev =>
+        prev.map(job =>
+          job._id === selectedJob._id ? { ...job, ...editForm } : job
+        )
+      );
 
         toast.success("Job Updated Successfully")
         setIsEditing(false)
@@ -78,11 +85,13 @@ const AllJobs = ({jobs}) => {
                 {jobs?.map((job)=>(
                     <tr key={job._id} className="border-b hover:bg-gray-50">
                         <td className="p-2">{job.company}</td>
-                        <td className="p-2">{job.title}</td>
+                        <td className="p-2">{`${job.title} (${job.role})`}</td>
                         <td className="p-2">
                             <select
                             value={job.status}
-                            onChange={(e)=>handleStatusChange(job._id,e.target.value)}
+                            onChange={(e)=>{
+                                handleStatusChange(job._id,e.target.value)
+                            }}
                             className="border rounded px-2 py-1 text-sm">
                                 <option value="Wishlist">Wishlist</option>
                                 <option value="Applied">Applied</option>
@@ -134,12 +143,11 @@ const AllJobs = ({jobs}) => {
                     <button
                     onClick={async () => {
                         try {
-                        await deleteJob({ id: jobToDelete._id }).unwrap();
+                        await deleteJob(jobToDelete._id);
                         toast.success("Deleted successfully");
                         setShowDeleteModal(false);
                         setJobToDelete(null);
-                        // optionally refetch jobs here
-                        refetch();
+                        
                         } catch (error) {
                         toast.error("Error deleting the job");
                         }
@@ -227,6 +235,14 @@ const AllJobs = ({jobs}) => {
                         onChange={e => setEditForm({ ...editForm, location: e.target.value })}
                         className="border rounded px-2 py-1 w-full mb-2"
                         placeholder="Location"
+                        />
+                        <label className="font-bold p-1 mb-2">Job Url</label>
+                        <input
+                        type="text"
+                        value={editForm.jobUrl}
+                        onChange={e => setEditForm({ ...editForm, jobUrl:e.target.value })}
+                        className="border rounded px-2 py-1 w-full mb-2"
+                        placeholder="job Url"
                         />
                         <label className="font-bold p-1 mb-2">Notes</label>
                         <textarea
