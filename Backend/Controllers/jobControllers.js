@@ -68,13 +68,23 @@ const updateJob=async(req,res)=>{
         runValidators:true
      });
 
-     if(!updateJob){
+     if(!updatedJob){
         return res.status(404).json({message:'Job not found'})
      }
 
      res.status(200).json(updatedJob)
    } catch (error) {
      res.status(500).json({message:'Error Updaating job',error:error.message});
+   }
+}
+
+const getAllJobs=async(req,res)=>{
+   const userId=req.user._id
+   try {
+    const jobs=await Job.find({user:userId})
+    return res.status(200).json(jobs)
+   } catch (error) {
+     res.status(500).json({message:'Error fetching jobs',error:error.message})
    }
 }
 
@@ -146,4 +156,5 @@ const getJobByMonth=async(req,res)=>{
         res.status(500).json({ message: 'Error fetching stats by month', error: error.message });
     }
 }
-export {createJob,updateJob,getJobStatus,getJobByMonth,deleteJob};
+export {createJob,updateJob,getJobStatus,getJobByMonth,
+deleteJob,getAllJobs};

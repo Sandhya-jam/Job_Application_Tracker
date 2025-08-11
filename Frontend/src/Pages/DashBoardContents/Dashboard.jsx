@@ -1,8 +1,9 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { motion } from "framer-motion"
 import { useLogoutMutation } from "../../Redux/api/usersApiSlice"
 import { useDispatch,useSelector } from "react-redux"
 import { useNavigate } from "react-router-dom"
+import { useGetByStatusQuery,useGetByMonthQuery, useGetAllJobsQuery} from "../../Redux/api/jobsApiSlice"
 import { LineChart,
   Line,
   XAxis,
@@ -17,47 +18,54 @@ import { Edit, Plus, Trash2, User } from "lucide-react"
 import { logout } from "../../Redux/authSlice"
 import { toast } from "react-toastify"
 import CreateForm from "./CreateForm"
+import AllJobs from "./AllJobs"
+
 const Dashboard = () => {
 
-  const jobStats = [
-    { name: "Applied", value: 35 },
-    { name: "Interview", value: 10 },
-    { name: "Offer", value: 5 },
-    { name: "Rejected", value: 8 },
-  ];
-  
-  const applicationsOverTime = [
-    { month: "Jan", applications: 5 },
-    { month: "Feb", applications: 8 },
-    { month: "Mar", applications: 12 },
-    { month: "Apr", applications: 7 },
-    { month: "May", applications: 10 },
-    { month: "Jun", applications: 14 },
-  ];
+  const {data:jobStats}=useGetByStatusQuery();
+  const pieData = jobStats
+  ? Object.entries(jobStats).map(([name, value]) => ({ name, value }))
+  : [];
 
-  const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff8042"];
+  const {data:monthData}=useGetByMonthQuery()
+  const [selectedYear,setSelectedYear]=useState(new Date().getFullYear());
+  const availableYrs=[...new Set(monthData?.map(item=>item.month.split("-")[0]))]
   
-  const initialJobs = [
-  { id: 1, company: "Google", position: "Software Engineer", status: "Interview", date: "2025-07-01" },
-  { id: 2, company: "Amazon", position: "Backend Developer", status: "Applied", date: "2025-07-05" },
-  { id: 3, company: "Microsoft", position: "DevOps Engineer", status: "Rejected", date: "2025-06-20" },
+  const applicationsOverTime = useMemo(()=>{
+    return monthData
+    ?.filter(item=>item.month.startsWith(selectedYear.toString()))
+    .map(item=>{
+      const date=new Date(item.month+"-01");
+      const monthLabel=date.toLocaleString("default",{month:'short'});
+      return {month:monthLabel,applications:item.count};
+    })
+    .sort((a,b)=>{
+      const monthOrder=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+      return monthOrder.indexOf(a.month)-monthOrder.indexOf(b.month);
+    });
+  },[monthData,selectedYear])
+
+  const COLORS = [
+  "#8884d8", // soft purple
+  "#82ca9d", // green
+  "#ffc658", // yellow
+  "#ff8042", // orange
+  "#8dd1e1", // light blue
+  "#a4de6c", // lime green
+  "#d0ed57", // bright yellow-green
+  "#ff7f50"  // coral
 ];
-
-  const [profile]=useState({
-    name:'Sandhya Rani',
-    email:'jamsandhyarani@yahoo.com',
-    role:'Intern Seeker'
-  });
   
+  const {data:jobs}=useGetAllJobsQuery();
+
   const [menuOpen,setMenuOpen]=useState(false)
   const toggleMenu=()=>setMenuOpen(!menuOpen)
   const [search,setSearch]=useState('')
   const [filter,setFilter]=useState('All')
-  const [jobs,setJobs]=useState(initialJobs)
   const [openAdd,setOpenAdd]=useState(false)
 
-  const filteredJobs = jobs.filter((job) => {
-    const matchesSearch = `${job.company} ${job.position}`.toLowerCase().includes(search.toLowerCase());
+  const filteredJobs = jobs?.filter((job) => {
+    const matchesSearch = `${job.company} ${job.title}`.toLowerCase().includes(search.toLowerCase());
     const matchesFilter = filter === "All" || job.status === filter;
     return matchesSearch && matchesFilter;
   });
@@ -108,21 +116,24 @@ const Dashboard = () => {
        )}
       </div>
     </header>
-     
+
+    {/* PIE CHART */}
      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <motion.div
       whileHover={{scale:1.02}}
       className="bg-blue-200 p-4 rounded-lg shadow">
       <h2 className="text-xl font-semibold mb-4">Application Status</h2>
-       <ResponsiveContainer width='100%' height={250}>
+      {pieData.length!==0 && (
+          <ResponsiveContainer width='100%' height={250}>
          <PieChart>
            <Pie
-           data={jobStats}
+           //converting obj into array(as we are getting data as obj from backend)
+           data={pieData} 
            dataKey='value'
            nameKey='name'
            outerRadius={100}
            label>
-             {jobStats.map((entry,index)=>(
+             {pieData.map((entry,index)=>(
               <Cell 
               key={`cell-${index}`}
               fill={COLORS[index%COLORS.length]}/>
@@ -131,12 +142,33 @@ const Dashboard = () => {
            <Tooltip/>
          </PieChart>
        </ResponsiveContainer>
+      )}
+
+      {pieData.length===0 && (
+         <p className="text-gray-600 text-lg text-center mt-[5rem]">No Job Stats Available</p>
+      )}
+       
       </motion.div>
 
       <motion.div
       whileHover={{scale:1.02}} 
-      className="bg-violet-200 p-4 rounded-lg shadow">
+      className=" relative bg-violet-200 p-4 rounded-lg shadow">
        <h2 className="text-xl font-semibold mb-4">Applications Over Time</h2>
+
+       {/* Year dropdown */}
+       <div className="flex justify-between items-center mb-4">
+          <select
+            value={selectedYear}
+            onChange={e => setSelectedYear(e.target.value)}
+            className="bg-white border border-gray-300 rounded px-2 py-1 text-sm"
+          >
+            {availableYrs.map(year => (
+              <option key={year} value={year}>{year}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Chart */}
        <ResponsiveContainer width='100%' height={250}>
          <LineChart data={applicationsOverTime}>
            <XAxis dataKey='month'/>
@@ -167,11 +199,15 @@ const Dashboard = () => {
           value={filter}
           onChange={(e)=>setFilter(e.target.value)}
           className="px-3 py-2 border border-gary-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-300">
-            <option >All</option>
-            <option >Applies</option>
-            <option >Interview</option>
-            <option >Offer</option>
-            <option >Rejected</option>
+            <option value="All">All</option>
+            <option value="Wishlist">Wishlist</option>
+            <option value="Applied">Applied</option>
+            <option value="Interviewing">Interviewing</option>
+            <option value="Offered">Offered</option>
+            <option value="Rejected">Rejected</option>
+            <option value="Accepted">Accepted</option>
+            <option value="Declined">Declined</option>
+            <option value="Archieved">Archieved</option>
           </select>
           <button
           onClick={()=>setOpenAdd(!openAdd)}
@@ -181,43 +217,7 @@ const Dashboard = () => {
         </div>
        </div>
         
-        <div className="overflow-auto rounded-sm">
-          <table className="w-full text-left text-sm">
-            <thead>
-               <tr className="bg-violet-400">
-                 <th className="p-2">Company</th>
-                 <th className="p-2">Position</th>
-                 <th className="p-2">Status</th>
-                 <th className="p-2">Date Applied</th>
-                 <th className="p-2 text-center">Actions</th>
-               </tr>
-            </thead>
-            <tbody>
-              {filteredJobs.map((job)=>(
-                <tr key={job.id} className="border-b hover:bg-gray-50">
-                  <td className="p-2">{job.company}</td>
-                    <td className="p-2">{job.position}</td>
-                    <td className="p-2">{job.status}</td>
-                    <td className="p-2">{job.date}</td>
-                    <td className="p-2 text-center">
-                      <div className="flex justify-center gap-2">
-                        <button
-                        //onClick={()=>handleUpdate()}
-                        className="p-1 text-blue-600 hover:text-blue-800">
-                         <Edit className="w-4 h-4"/>
-                        </button>
-                        <button
-                        //onClick={()=>handledelete}
-                        className="p-1 text-red-600 hover:text-red-800">
-                          <Trash2 className="w-4 h-4"/>
-                        </button>
-                      </div>
-                    </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <AllJobs jobs={(search === '' && filter === 'All') ? jobs : filteredJobs} />
 
       </motion.div>
      </div>
@@ -226,7 +226,12 @@ const Dashboard = () => {
        onClick={()=>setOpenAdd(false)}>
          <div className="bg-white rounded-lg p-6 shadow-lg max-w-lg w-full"
          onClick={(e)=>e.stopPropagation()}>
-           <CreateForm/>
+        <button
+        onClick={() => setOpenAdd(false)}
+        className=" relative left-112 -top-2 text-gray-600 hover:text-gray-900 focus:outline-none 
+         hover:bg-red-500 h-7 w-6 rounded-sm hover:cursor-pointer"
+        >X</button>
+        <CreateForm/>
          </div>
        </div>
     )}

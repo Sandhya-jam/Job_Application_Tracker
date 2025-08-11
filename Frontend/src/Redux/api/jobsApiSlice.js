@@ -15,7 +15,10 @@ export const jobsApiSlice=apiSlice.injectEndpoints({
             query:({id,data})=>({
                 url:`${JOBS_URL}/${id}`,
                 method:'PUT',
-                body:data
+                body:data,
+                headers:{
+                'Content-Type':'application/json',
+                },
             }),
         }),
         delete:builder.mutation({
@@ -35,8 +38,13 @@ export const jobsApiSlice=apiSlice.injectEndpoints({
                 url:`${JOBS_URL}/stats/month`,
                 method:'GET'
             })
+        }),
+        getAllJobs:builder.query({
+           query:()=>({
+              url:`${JOBS_URL}/getalljobs`,
+              method:'GET'
+           }) 
         })
-
     })
 });
 
@@ -45,5 +53,6 @@ export const{
     useUpdateMutation,
     useDeleteMutation,
     useGetByMonthQuery,
-    useGetByStatusQuery
+    useGetByStatusQuery,
+    useGetAllJobsQuery
 }=jobsApiSlice
