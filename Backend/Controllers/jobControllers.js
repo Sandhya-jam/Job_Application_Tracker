@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
-import Job from '../Models/jobModel.js'
-
+import {Job,FIXED_STATUSES,mergedStages,validateStageDates} from '../Models/jobModel.js'
+import { insertCustomStages } from '../Utils/StagesUpdate.js';
 const createJob=async(req,res)=>{
     try {
         const{
@@ -9,73 +9,89 @@ const createJob=async(req,res)=>{
             company,
             location,
             jobUrl,
-            status,
-            dateApplied,
             notes,
             contacts,
-        }=req.body;
-        if(!title && !role && !company && !location){
-            res.status(400).send({error:'Required to fill titlle,role,comapany & location'})
-        }
+            fixedStageDates,
+            customStages,
+            curr_status,
+        }=req.body
 
-        const newJob=new Job({
+        const stages=mergedStages(customStages,fixedStageDates);
+        validateStageDates(stages);
+
+        const exist=stages?.findIndex(s=>s.name===curr_status);
+        if(exist==-1) return res.status(401).json({message:'error in curr status'});
+    
+        const job=new Job({
             title,
             role,
             company,
             location,
             jobUrl,
-            status,
-            dateApplied,
             notes,
             contacts,
+            status:stages,
             user:req.user._id
         });
-
-        const savedJob=await newJob.save()
-        res.status(201).json(savedJob)
+        await job.save()
+        res.status(201).json(job)
     } catch (error) {
-        console.error('Error creating job',error)
-        res.status(500).json({error:'Server error'});
+        res.status(400).json({message:'Falied to create Job',error:error.message});
     }
 };
 
 const updateJob=async(req,res)=>{
-    const jobId=req.params.id
-    
-    const allowedUpdates=[
-        'title',
-        'role',
-        'company',
-        'location',
-        'jobUrl',
-        'status',
-        'notes',
-        'contacts'
-    ];
+    try {
+        const jobId=req.params.id;
 
-    const updates={};
-    for(const key of allowedUpdates){
-        if(req.body[key]!==undefined){
-            updates[key]=req.body[key];
+        const{
+            title,
+            role,
+            location,
+            company,
+            jobUrl,
+            notes,
+            contacts,
+            fixedStageDates,
+            customStages,
+            curr_status
+        }=req.body
+
+        let job=await Job.findById(jobId)
+        if(!job) return res.status(404).json({message:'Job not found'});
+
+        if (title !== undefined) job.title = title;
+        if (role !== undefined) job.role = role;
+        if (company !== undefined) job.company = company;
+        if (location !== undefined) job.location = location;
+        if (jobUrl !== undefined) job.jobUrl = jobUrl;
+        if (notes !== undefined) job.notes = notes;
+        if (contacts !== undefined) job.contacts = contacts;
+        if (curr_status !== undefined) job.curr_status = curr_status;
+
+        //update fixed state dates
+        if (fixedStageDates) {
+            for (let stage of job.status) {
+                if (fixedStageDates[stage.name] !== undefined) {
+                stage.date = fixedStageDates[stage.name];
+                }
+            }
         }
+        
+        if (customStages) {
+           job.status = insertCustomStages(job.status, customStages);
+        }
+
+        validateStageDates(job.status)
+
+        job.lastUpdated=new Date()
+        await job.save()
+
+        res.status(200).json(job);
+        
+    } catch (error) {
+        res.status(500).json({ message: "Error updating job", error: error.message });
     }
-
-    updates.lastUpdated=new Date()
-
-   try {
-     const updatedJob=await Job.findByIdAndUpdate(jobId,updates,{
-        new:true,
-        runValidators:true
-     });
-
-     if(!updatedJob){
-        return res.status(404).json({message:'Job not found'})
-     }
-
-     res.status(200).json(updatedJob)
-   } catch (error) {
-     res.status(500).json({message:'Error Updaating job',error:error.message});
-   }
 }
 
 const getAllJobs=async(req,res)=>{
@@ -95,7 +111,7 @@ const getJobStatus=async(req,res)=>{
             {$match:{user:new mongoose.Types.ObjectId(userId)}},
             {
                 $group:{
-                    _id:"$status",
+                    _id:"$curr_status",
                     count:{$sum:1}
                 }
             }
@@ -129,14 +145,24 @@ const deleteJob=async(req,res)=>{
 
 const getJobByMonth=async(req,res)=>{
     const userId=req.user._id;
+    
     try {
         const stats=await Job.aggregate([
-            {$match:{user:new mongoose.Types.ObjectId(userId)}},
+            {
+                $match:{
+                    user:new mongoose.Types.ObjectId(userId),
+                }
+            },
+            {
+                $addFields: {
+                    firstStatusDate: { $arrayElemAt: ["$status.date", 0] }
+                }
+            },
             {
                 $group:{
                     _id:{
-                        year:{$year:'$dateApplied'},
-                        month:{$month:'$dateApplied'}
+                        year:{$year:'$firstStatusDate'},
+                        month:{$month:'$firstStatusDate'}
                     },
                     count:{$sum:1}
                 }
