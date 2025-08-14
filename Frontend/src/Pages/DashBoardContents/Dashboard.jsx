@@ -67,7 +67,7 @@ const Dashboard = () => {
 
   const filteredJobs = jobs?.filter((job) => {
     const matchesSearch = `${job.company} ${job.title}`.toLowerCase().includes(search.toLowerCase());
-    const matchesFilter = filter === "All" || job.status === filter;
+    const matchesFilter = filter === "All" || job.curr_status === filter;
     const matchesRole= roleFilter ==="All" || job.role===roleFilter;
     return matchesSearch && matchesFilter && matchesRole;
   });
@@ -127,7 +127,7 @@ const Dashboard = () => {
       <h2 className="text-xl font-semibold mb-4">Application Status</h2>
       {pieData.length!==0 && (
           <ResponsiveContainer width='100%' height={250}>
-         <PieChart>
+         <PieChart>  
            <Pie
            //converting obj into array(as we are getting data as obj from backend)
            data={pieData} 
@@ -212,8 +212,8 @@ const Dashboard = () => {
             <option value="All">All(status)</option>
             <option value="Wishlist">Wishlist</option>
             <option value="Applied">Applied</option>
-            <option value="Interviewing">Interviewing</option>
-            <option value="Offered">Offered</option>
+            <option value="Interview">Interview</option>
+            <option value="Offered">Offer</option>
             <option value="Rejected">Rejected</option>
             <option value="Accepted">Accepted</option>
             <option value="Declined">Declined</option>
@@ -227,7 +227,7 @@ const Dashboard = () => {
         </div>
        </div>
         
-        <AllJobs jobs={(search === '' && filter === 'All' && roleFilter==='All') ? jobs : filteredJobs} />
+        <AllJobs jobs={(roleFilter==='All' && search==='' && filter==='All')?jobs:filteredJobs}/>
 
       </motion.div>
      </div>

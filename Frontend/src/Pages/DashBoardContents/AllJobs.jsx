@@ -4,6 +4,7 @@ import {format} from 'date-fns'
 import { motion } from "framer-motion"
 import { useDeleteMutation,useUpdateMutation } from "../../Redux/api/jobsApiSlice"
 import { toast } from "react-toastify"
+import { NextEvent } from "../../Utils/NextEvent"
 
 const AllJobs = ({jobs:initialJobs}) => {
   const [updateJob]=useUpdateMutation()
@@ -29,9 +30,11 @@ const AllJobs = ({jobs:initialJobs}) => {
     company: job.company || "",
     location: job.location || "",
     notes: job.notes || "",
-    status: job.status || "",
+    status: job.status || [],
     jobUrl: job.jobUrl || "",
-    contacts: job.contacts || [],
+    contacts: job.contacts || [{
+        "name":"","email":"","position":"","phone":""
+    }],
   });
   };
   
@@ -39,11 +42,11 @@ const AllJobs = ({jobs:initialJobs}) => {
      try {
          setJobs(prev =>
         prev.map(job =>
-          job._id === jobId ? { ...job, status: newStatus } : job
+          job._id === jobId ? { ...job, curr_status: newStatus } : job
         )
       );
 
-        await updateJob({id:jobId,data:{status:newStatus}}).unwrap()
+        await updateJob({id:jobId,data:{curr_status:newStatus}}).unwrap()
         toast.success("Status updated successfully!");
      } catch (error) {
         toast.error(error?.data?.message || "Failed to update status")
@@ -77,7 +80,8 @@ const AllJobs = ({jobs:initialJobs}) => {
                     <th className="p-2">Company</th>
                     <th className="p-2">Position</th>
                     <th className="p-2">Status</th>
-                    <th className="p-2">Date Applied</th>
+                    <th className="p-2">Upcoming Event</th>
+                    <th className="p-2">Upcoming Event</th>
                     <th className="p-2">Actions</th>
                 </tr>
             </thead>
@@ -88,22 +92,32 @@ const AllJobs = ({jobs:initialJobs}) => {
                         <td className="p-2">{`${job.title} (${job.role})`}</td>
                         <td className="p-2">
                             <select
-                            value={job.status}
+                            value={job.curr_status}
                             onChange={(e)=>{
                                 handleStatusChange(job._id,e.target.value)
                             }}
-                            className="border rounded px-2 py-1 text-sm">
-                                <option value="Wishlist">Wishlist</option>
-                                <option value="Applied">Applied</option>
-                                <option value="Interviewing">Interviewing</option>
-                                <option value="Offered">Offered</option>
-                                <option value="Rejected">Rejected</option>
-                                <option value="Accepted">Accepted</option>
-                                <option value="Declined">Declined</option>
-                                <option value="Archieved">Archieved</option>
+                            className="border rounded px-2 py-1 text-sm w-30">
+                                {job.status?.map((s)=>(
+                                    <option value={s.name} className="w-auto">{s.name}</option>
+                                ))}
                             </select>
                         </td>
-                        <td className="p-2">{new Date(job.dateApplied).toLocaleString()}</td>
+                        <td className="p-2">{
+                            NextEvent(job.curr_status,job.status)!=-1 ?(
+                               job.status[NextEvent(job.curr_status,job.status)].name
+                            ):(
+                              "-"
+                            )
+                            }
+                        </td>
+                        <td className="p-2">{
+                            NextEvent(job.curr_status,job.status)!=-1 ?(
+                               new Date(job.status[NextEvent(job.curr_status, job.status)].date).toLocaleDateString()
+                            ):(
+                              "-"
+                            )
+                            }
+                        </td>
                         <td className="p-2 text-center">
                             <button
                             onClick={()=>openDetails(job)}
@@ -177,8 +191,8 @@ const AllJobs = ({jobs:initialJobs}) => {
                        <h2 className="text-xl font-semibold mb-4">{selectedJob.company}</h2>
                        <p><strong>Position:</strong> {selectedJob.title} ({selectedJob.role})</p>
                         <p><strong>Location:</strong> {selectedJob.location}</p>
-                        <p><strong>Status:</strong> {selectedJob.status}</p>
-                        <p><strong>Date Applied:</strong> {new Date(selectedJob.dateApplied).toLocaleDateString()}</p>
+                        <p><strong>Status:</strong> {selectedJob.curr_status}</p>
+                        <p><strong>Date Applied:</strong> {new Date(selectedJob.status[0].date).toLocaleDateString()}</p>
                         <p><strong>Job URL:</strong> <a href={selectedJob.jobUrl} target="_blank" className="text-blue-500 underline">{selectedJob.jobUrl}</a></p>
                         <p className="mt-3"><strong>Notes:</strong> {selectedJob.notes || "—"}</p>
                         
@@ -203,71 +217,163 @@ const AllJobs = ({jobs:initialJobs}) => {
                         </div>
                     </>
                   ):(
-                    <form onSubmit={handleSave}>
-                        <label className="font-bold p-1 mb-2">Company</label>
-                        <input
-                        type="text"
-                        value={editForm.company}
-                        onChange={e=>setEditForm({...editForm,company:e.target.value})}
-                        className="border rounded px-2 py-1 w-full mb-2"
-                        placeholder="Company"
-                        />
-                        <label className="font-bold p-1 mb-2">Title</label>
-                        <input
-                        type="text"
-                        value={editForm.title}
-                        onChange={e => setEditForm({ ...editForm, title: e.target.value })}
-                        className="border rounded px-2 py-1 w-full mb-2"
-                        placeholder="Job Title"
-                        />
-                        <label className="font-bold p-1 mb-2">Role</label>
-                        <input
-                        type="text"
-                        value={editForm.role}
-                        onChange={e => setEditForm({ ...editForm, role: e.target.value })}
-                        className="border rounded px-2 py-1 w-full mb-2"
-                        placeholder="Role"
-                        />
-                        <label className="font-bold p-1 mb-2">Location</label>
-                        <input
-                        type="text"
-                        value={editForm.location}
-                        onChange={e => setEditForm({ ...editForm, location: e.target.value })}
-                        className="border rounded px-2 py-1 w-full mb-2"
-                        placeholder="Location"
-                        />
-                        <label className="font-bold p-1 mb-2">Job Url</label>
-                        <input
-                        type="text"
-                        value={editForm.jobUrl}
-                        onChange={e => setEditForm({ ...editForm, jobUrl:e.target.value })}
-                        className="border rounded px-2 py-1 w-full mb-2"
-                        placeholder="job Url"
-                        />
-                        <label className="font-bold p-1 mb-2">Notes</label>
-                        <textarea
-                        value={editForm.notes}
-                        onChange={e => setEditForm({ ...editForm, notes: e.target.value })}
-                        className="border rounded px-2 py-1 w-full mb-2"
-                        placeholder="Notes"
-                        />
+                    <form 
+                    className="overflow-y-auto h-[80vh] pt-3"
+                    onSubmit={handleSave}>
+  {/* Company */}
+  <label className="font-bold p-1 mb-2">Company</label>
+  <input
+    type="text"
+    value={editForm.company}
+    onChange={e => setEditForm({ ...editForm, company: e.target.value })}
+    className="border rounded px-2 py-1 w-full mb-2"
+    placeholder="Company"
+  />
 
-                         <div className="mt-4 flex justify-end gap-2">
-                        <button
-                            type="button"
-                            onClick={() => setIsEditing(false)}
-                            className="bg-gray-300 px-4 py-1 rounded hover:cursor-pointer"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            className="bg-green-500 hover:cursor-pointer hover:bg-green-600 text-white px-4 py-1 rounded"
-                        >
-                            Save
-                        </button>
-                        </div>
-                    </form>
+  {/* Title */}
+  <label className="font-bold p-1 mb-2">Title</label>
+  <input
+    type="text"
+    value={editForm.title}
+    onChange={e => setEditForm({ ...editForm, title: e.target.value })}
+    className="border rounded px-2 py-1 w-full mb-2"
+    placeholder="Job Title"
+  />
+
+  {/* Role */}
+  <label className="font-bold p-1 mb-2">Role</label>
+  <input
+    type="text"
+    value={editForm.role}
+    onChange={e => setEditForm({ ...editForm, role: e.target.value })}
+    className="border rounded px-2 py-1 w-full mb-2"
+    placeholder="Role"
+  />
+
+  {/* Location */}
+  <label className="font-bold p-1 mb-2">Location</label>
+  <input
+    type="text"
+    value={editForm.location}
+    onChange={e => setEditForm({ ...editForm, location: e.target.value })}
+    className="border rounded px-2 py-1 w-full mb-2"
+    placeholder="Location"
+  />
+
+  {/* Job URL */}
+  <label className="font-bold p-1 mb-2">Job URL</label>
+  <input
+    type="text"
+    value={editForm.jobUrl}
+    onChange={e => setEditForm({ ...editForm, jobUrl: e.target.value })}
+    className="border rounded px-2 py-1 w-full mb-2"
+    placeholder="Job URL"
+  />
+
+  {/* Notes */}
+  <label className="font-bold p-1 mb-2">Notes</label>
+  <textarea
+    value={editForm.notes}
+    onChange={e => setEditForm({ ...editForm, notes: e.target.value })}
+    className="border rounded px-2 py-1 w-full mb-2"
+    placeholder="Notes"
+  />
+
+  {/* Contacts Section */}
+  <div className="mt-4">
+    <label className="font-bold mb-2">Contacts</label>
+    {editForm.contacts?.map((contact, idx) => (
+      <div key={idx} className="border rounded p-3 bg-white mb-3">
+        <input
+          type="text"
+          value={contact.name}
+          onChange={e => {
+            const updated = [...editForm.contacts];
+            updated[idx].name = e.target.value;
+            setEditForm({ ...editForm, contacts: updated });
+          }}
+          placeholder="Name"
+          className="border rounded px-2 py-1 w-full mb-1"
+        />
+        <input
+          type="email"
+          value={contact.email}
+          onChange={e => {
+            const updated = [...editForm.contacts];
+            updated[idx].email = e.target.value;
+            setEditForm({ ...editForm, contacts: updated });
+          }}
+          placeholder="Email"
+          className="border rounded px-2 py-1 w-full mb-1"
+        />
+        <input
+          type="text"
+          value={contact.phone || ""}
+          onChange={e => {
+            const updated = [...editForm.contacts];
+            updated[idx].phone = e.target.value;
+            setEditForm({ ...editForm, contacts: updated });
+          }}
+          placeholder="Phone"
+          className="border rounded px-2 py-1 w-full mb-1"
+        />
+        <input
+          type="text"
+          value={contact.position || ""}
+          onChange={e => {
+            const updated = [...editForm.contacts];
+            updated[idx].position = e.target.value;
+            setEditForm({ ...editForm, contacts: updated });
+          }}
+          placeholder="Position"
+          className="border rounded px-2 py-1 w-full mb-1"
+        />
+        <button
+          type="button"
+          onClick={() => {
+            const updated = editForm.contacts.filter((_, i) => i !== idx);
+            setEditForm({ ...editForm, contacts: updated });
+          }}
+          className="text-red-500 mt-1 text-sm hover:underline"
+        >
+          Remove
+        </button>
+      </div>
+    ))}
+
+    {/* Add new contact */}
+    <button
+      type="button"
+      onClick={() =>
+        setEditForm({
+          ...editForm,
+          contacts: [...(editForm.contacts || []), { name: "", email: "", phone: "", position: "" }],
+        })
+      }
+      className="text-blue-500 hover:underline text-sm"
+    >
+      + Add Contact
+    </button>
+  </div>
+
+  {/* Form Actions */}
+  <div className="mt-4 flex justify-end gap-2">
+    <button
+      type="button"
+      onClick={() => setIsEditing(false)}
+      className="bg-gray-300 px-4 py-1 rounded hover:cursor-pointer"
+    >
+      Cancel
+    </button>
+    <button
+      type="submit"
+      className="bg-green-500 hover:bg-green-600 text-white px-4 py-1 rounded hover:cursor-pointer"
+    >
+      Save
+    </button>
+  </div>
+</form>
+
                   )}
                 </motion.div>
             </div>

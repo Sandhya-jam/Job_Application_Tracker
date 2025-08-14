@@ -42,9 +42,9 @@ function mergedStages(customStagesObj={},fixedStagesDates={}){
     for(let i=0;i<FIXED_STATUSES.length;i++){
         const fixed=FIXED_STATUSES[i];
         if(fixed==='Applied' && fixedStagesDates[fixed]===null){
-            fixedStagesDates[fixed]=new Date
+            fixedStagesDates[fixed]=new Date().now();
         }
-        merged.push({name:fixed,date:fixedStagesDates[fixed] || null})
+        merged.push({name:fixed,date:fixedStagesDates[fixed]? new Date(fixedStagesDates[fixed]):null})
          
         //inserting custom stages
         if(customStagesObj && customStagesObj[fixed]){
@@ -59,25 +59,34 @@ function mergedStages(customStagesObj={},fixedStagesDates={}){
     return merged;
 }
 
-function validateStageDates(job){
-    //1.validate applied date
-    const appliedStage=job.status?.find(s=>s.name==='Applied');
-    if(appliedStage?.date && appliedStage.date>new Date()){
-        return next(new Error("Applied date cannot be in the future."))
+function validateStageDates(job) {
+    const parseDate = (d) => (d ? new Date(d) : null);
+    const today = new Date();
+
+    const appliedStage = job.status?.find(s => s.name === 'Applied');
+    const appliedDate = parseDate(appliedStage?.date);
+
+    if (appliedDate && appliedDate > today) {
+        throw new Error("Applied date cannot be in the future.");
     }
-    //Validate stage order
-    for(let i=0;i<job.status?.length-1;i++){
-        const curr=job.status[i]
-        const nextStage=job.status[i+1]
 
-        if(!FIXED_STATUSES.includes(nextStage.name) && nextStage.date && !curr.date){
-            return next(new Error(`Cannot set date for "${nextStage.name}" before "${curr.name}" date.`));
+    for (let i = 0; i < job.status?.length - 1; i++) {
+        const curr = job.status[i];
+        const nextStage = job.status[i + 1];
+
+        const currDate = parseDate(curr.date);
+        const nextDate = parseDate(nextStage.date);
+
+        if (!FIXED_STATUSES.includes(nextStage.name) && nextDate && !currDate) {
+            throw new Error(`Cannot set date for "${nextStage.name}" before "${curr.name}" date.`);
         }
 
-        if(curr.date && nextStage.date && curr.date>nextStage.date){
-           return next(new Error(`"${nextStage.name}" date must be after "${curr.name}" date.`));
+        if (currDate && nextDate && currDate > nextDate) {
+            throw new Error(`"${nextStage.name}" date must be after "${curr.name}" date.`);
         }
-    }   
+    }
 }
+
+
 const Job=mongoose.model('Job',jobSchema);
 export {Job,mergedStages,FIXED_STATUSES,validateStageDates};

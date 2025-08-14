@@ -17,11 +17,11 @@ const createJob=async(req,res)=>{
         }=req.body
 
         const stages=mergedStages(customStages,fixedStageDates);
-        validateStageDates(stages);
-
-        const exist=stages?.findIndex(s=>s.name===curr_status);
-        if(exist==-1) return res.status(401).json({message:'error in curr status'});
-    
+        try {
+            validateStageDates({status:stages})
+        } catch (error) {
+            return res.status(400).json({message:error?.message})
+        }
         const job=new Job({
             title,
             role,
@@ -31,6 +31,7 @@ const createJob=async(req,res)=>{
             notes,
             contacts,
             status:stages,
+            curr_status,
             user:req.user._id
         });
         await job.save()
