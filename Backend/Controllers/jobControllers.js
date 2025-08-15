@@ -105,29 +105,6 @@ const getAllJobs=async(req,res)=>{
    }
 }
 
-const getJobStatus=async(req,res)=>{
-    const userId=req.user._id
-    try {
-        const stats=await Job.aggregate([
-            {$match:{user:new mongoose.Types.ObjectId(userId)}},
-            {
-                $group:{
-                    _id:"$curr_status",
-                    count:{$sum:1}
-                }
-            }
-        ]);
-
-        const formatData={};
-        stats.forEach(item=>{
-            formatData[item._id]=item.count;
-        });
-        res.status(200).json(formatData)
-    } catch (error) {
-        res.status(500).json({message:'Error fetching stats by status',error:error.message})
-    }
-}
-
 const deleteJob=async(req,res)=>{
     const jobId=req.params.id;
 
@@ -144,44 +121,5 @@ const deleteJob=async(req,res)=>{
     }
 }
 
-const getJobByMonth=async(req,res)=>{
-    const userId=req.user._id;
-    
-    try {
-        const stats=await Job.aggregate([
-            {
-                $match:{
-                    user:new mongoose.Types.ObjectId(userId),
-                }
-            },
-            {
-                $addFields: {
-                    firstStatusDate: { $arrayElemAt: ["$status.date", 0] }
-                }
-            },
-            {
-                $group:{
-                    _id:{
-                        year:{$year:'$firstStatusDate'},
-                        month:{$month:'$firstStatusDate'}
-                    },
-                    count:{$sum:1}
-                }
-            },
-            {
-                $sort:{'_id.year':-1,"_id.month":-1}
-            }
-        ]);
-
-        const formatted=stats.map(item=>({
-            month:`${item._id.year}-${String(item._id.month).padStart(2,'0')}`,
-            count:item.count
-        }));
-
-        res.status(200).json(formatted)
-    } catch (error) {
-        res.status(500).json({ message: 'Error fetching stats by month', error: error.message });
-    }
-}
-export {createJob,updateJob,getJobStatus,getJobByMonth,
+export {createJob,updateJob,
 deleteJob,getAllJobs};
