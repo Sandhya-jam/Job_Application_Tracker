@@ -19,6 +19,7 @@ import { logout } from "../../Redux/authSlice"
 import { toast } from "react-toastify"
 import CreateForm from "./CreateForm"
 import AllJobs from "./AllJobs"
+import Analytics from "./Analytics"
 
 const Dashboard = () => {
 
@@ -185,7 +186,14 @@ const Dashboard = () => {
          </LineChart>
        </ResponsiveContainer>
       </motion.div>
+     </div>
 
+     {/* STATISTICS */}
+        <div>
+          <Analytics/>
+        </div>
+     
+     {/* FILTERS */}
       <motion.div
       whileHover={{scale:1.02}} className="bg-white p-4 rounded-lg shadow md:col-span-2">
        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
@@ -230,7 +238,6 @@ const Dashboard = () => {
         <AllJobs jobs={(roleFilter==='All' && search==='' && filter==='All')?jobs:filteredJobs}/>
 
       </motion.div>
-     </div>
     {openAdd && (
        <div className="fixed inset-0 bg-opacity-10 backdrop-blur-sm flex justify-center items-center z-50"
        onClick={()=>setOpenAdd(false)}>
@@ -245,7 +252,9 @@ const Dashboard = () => {
          </div>
        </div>
     )}
+
     </motion.div>
+
   )
 }
 

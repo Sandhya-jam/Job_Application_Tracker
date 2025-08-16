@@ -11,6 +11,7 @@ export const jobsApiSlice=apiSlice.injectEndpoints({
             }),
             invalidatesTags:['Job','JobStats','JobMonths']
         }),
+
         update:builder.mutation({
             query:({id,data})=>({
                 url:`${JOBS_URL}/${id}`,
@@ -22,6 +23,7 @@ export const jobsApiSlice=apiSlice.injectEndpoints({
                 invalidatesTags:['Job','JobStats','JobMonths'],
             }),
         }),
+
         delete:builder.mutation({
             query:(id)=>({
                 url:`${JOBS_URL}/${id}`,
@@ -29,6 +31,7 @@ export const jobsApiSlice=apiSlice.injectEndpoints({
             }),
             invalidatesTags:['Job','JobStats','JobMonths'],
         }),
+
         getByStatus:builder.query({
             query:()=>({
                 url:`${JOBS_URL}/stats/status`,
@@ -36,6 +39,7 @@ export const jobsApiSlice=apiSlice.injectEndpoints({
             }),
             providesTags:['JobStats'],
         }),
+
         getByMonth:builder.query({
             query:()=>({
                 url:`${JOBS_URL}/stats/month`,
@@ -43,13 +47,32 @@ export const jobsApiSlice=apiSlice.injectEndpoints({
             }),
             providesTags:['JobMonths']
         }),
+        
+        getAvgTime:builder.mutation({
+            query:({data})=>({
+               url:`${JOBS_URL}/stats/avgTime`,
+               method:'POST',
+               body:data
+            }),
+        }),
+
+        getConvRate:builder.mutation({
+            query:({data})=>({
+                url:`${JOBS_URL}/stats/conversion-rate`,
+                method:'POST',
+                body:data
+            }),
+        }),
+
         getAllJobs:builder.query({
            query:()=>({
               url:`${JOBS_URL}/getalljobs`,
               method:'GET'
            }),
            providesTags:['Job','JobStats','JobMonths'] 
-        })
+        }),
+
+
     })
 });
 
@@ -59,5 +82,7 @@ export const{
     useDeleteMutation,
     useGetByMonthQuery,
     useGetByStatusQuery,
-    useGetAllJobsQuery
+    useGetAllJobsQuery,
+    useGetAvgTimeMutation,
+    useGetConvRateMutation,
 }=jobsApiSlice
