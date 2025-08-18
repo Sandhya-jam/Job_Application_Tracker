@@ -32,6 +32,10 @@ const userSchema=mongoose.Schema({
     },
     location:{
         type:String,
+    },
+    isAdmin:{
+        type:Boolean,
+        default:false
     }
 },{timestamps:true});
 

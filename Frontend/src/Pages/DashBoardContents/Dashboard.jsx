@@ -189,7 +189,7 @@ const Dashboard = () => {
      </div>
 
      {/* STATISTICS */}
-        <div>
+        <div className="w-full mt-6">
           <Analytics/>
         </div>
      

@@ -12,4 +12,5 @@ router.route('/logout').post(logoutUser);
 router.route('/profile')
       .get(authenticate,getProfile)
       .put(authenticate,updateProfile)
+
 export default router;
