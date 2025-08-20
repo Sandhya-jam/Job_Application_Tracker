@@ -52,6 +52,7 @@ const loginUser=asyncHandler(async(req,res)=>{
             res.status(200).json({_id:existingUser._id,
                 username:existingUser.username,
                 email:existingUser.email,
+                isAdmin:existingUser.isAdmin,
                 role:existingUser.role,
                 joined:existingUser.joined,
                 bio:existingUser.bio,

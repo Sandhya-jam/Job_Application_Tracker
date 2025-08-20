@@ -154,7 +154,7 @@ export const getAvgDaysPairs=async(req,res)=>{
             });
         })
 
-        return res.status(201).json(result);
+        return res.status(201).json({averages:result});
     } catch (error) {
         return res.status(500).json({message:"Failed to compute avg days",error:error.message});
     }

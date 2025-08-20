@@ -2,7 +2,7 @@ import { useMemo, useState } from "react"
 import { motion } from "framer-motion"
 import { useLogoutMutation } from "../../Redux/api/usersApiSlice"
 import { useDispatch,useSelector } from "react-redux"
-import { useNavigate } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { useGetByStatusQuery,useGetByMonthQuery, useGetAllJobsQuery} from "../../Redux/api/jobsApiSlice"
 import { LineChart,
   Line,
@@ -66,6 +66,7 @@ const Dashboard = () => {
   const [openAdd,setOpenAdd]=useState(false)
   const [roleFilter,setRoleFilter]=useState('All')
 
+  const {userInfoJ}=useSelector(state=>state.auth)
   const filteredJobs = jobs?.filter((job) => {
     const matchesSearch = `${job.company} ${job.title}`.toLowerCase().includes(search.toLowerCase());
     const matchesFilter = filter === "All" || job.curr_status === filter;
@@ -110,6 +111,28 @@ const Dashboard = () => {
           className="w-full text-left px-4 py-2 text-sm hover:bg-purple-100 rounded-t-lg hover:cursor-pointer">
            Profile
           </button>
+          {userInfoJ.isAdmin && (
+            <>
+             <Link to='/admin/dashboard'>
+              <button 
+              className="w-full text-left px-4 py-2 text-sm hover:bg-pink-100 rounded-b-lg hover:cursor-pointer">
+              Admin Dashboard
+              </button>
+             </Link>
+             <Link to='/admin/users'>
+              <button 
+              className="w-full text-left px-4 py-2 text-sm hover:bg-pink-100 rounded-b-lg hover:cursor-pointer">
+              All Users
+              </button>
+             </Link>
+             <Link to='/admin/jobs'>
+              <button 
+              className="w-full text-left px-4 py-2 text-sm hover:bg-pink-100 rounded-b-lg hover:cursor-pointer">
+              All Jobs
+              </button>
+             </Link>
+            </> 
+          )}
           <button 
           onClick={handlelogout}
           className="w-full text-left px-4 py-2 text-sm hover:bg-pink-100 rounded-b-lg hover:cursor-pointer">
