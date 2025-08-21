@@ -41,59 +41,62 @@ const createJob=async(req,res)=>{
     }
 };
 
-const updateJob=async(req,res)=>{
-    try {
-        const jobId=req.params.id;
+const updateJob = async (req, res) => {
+  try {
+    const jobId = req.params.id;
 
-        const{
-            title,
-            role,
-            location,
-            company,
-            jobUrl,
-            notes,
-            contacts,
-            fixedStageDates,
-            customStages,
-            curr_status
-        }=req.body
+    const {
+      title,
+      role,
+      location,
+      company,
+      jobUrl,
+      notes,
+      contacts,
+      curr_status,
+      statusName,
+      date,
+      statusUpdates
+    } = req.body;
 
-        let job=await Job.findById(jobId)
-        if(!job) return res.status(404).json({message:'Job not found'});
+    let job = await Job.findById(jobId);
+    if (!job) return res.status(404).json({ message: 'Job not found' });
 
-        if (title !== undefined) job.title = title;
-        if (role !== undefined) job.role = role;
-        if (company !== undefined) job.company = company;
-        if (location !== undefined) job.location = location;
-        if (jobUrl !== undefined) job.jobUrl = jobUrl;
-        if (notes !== undefined) job.notes = notes;
-        if (contacts !== undefined) job.contacts = contacts;
-        if (curr_status !== undefined) job.curr_status = curr_status;
+    if (title !== undefined) job.title = title;
+    if (role !== undefined) job.role = role;
+    if (company !== undefined) job.company = company;
+    if (location !== undefined) job.location = location;
+    if (jobUrl !== undefined) job.jobUrl = jobUrl;
+    if (notes !== undefined) job.notes = notes;
+    if (contacts !== undefined) job.contacts = contacts;
+    if (curr_status !== undefined) job.curr_status = curr_status;
 
-        //update fixed state dates
-        if (fixedStageDates) {
-            for (let stage of job.status) {
-                if (fixedStageDates[stage.name] !== undefined) {
-                stage.date = fixedStageDates[stage.name];
-                }
-            }
-        }
-        
-        if (customStages) {
-           job.status = insertCustomStages(job.status, customStages);
-        }
-
-        validateStageDates(job.status)
-
-        job.lastUpdated=new Date()
-        await job.save()
-
-        res.status(200).json(job);
-        
-    } catch (error) {
-        res.status(500).json({ message: "Error updating job", error: error.message });
+    if (statusName && date) {
+      const stage = job.status.find(s => s.name === statusName);
+      if (stage) {
+        stage.date = date;
+      }
     }
-}
+
+    if (statusUpdates?.length) {
+      statusUpdates.forEach(update => {
+        const stage = job.status.find(s => s.name === update.name);
+        if (stage) {
+          stage.date = update.date;
+        }
+      });
+    }
+
+    validateStageDates(job);
+
+    job.lastUpdated = new Date();
+    await job.save();
+
+    res.status(200).json(job);
+  } catch (error) {
+    res.status(500).json({ message: "Error updating job", error: error.message });
+  }
+};
 
 const getAllJobs=async(req,res)=>{
    const userId=req.user._id

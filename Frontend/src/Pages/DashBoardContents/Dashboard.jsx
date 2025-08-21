@@ -18,7 +18,7 @@ import {Plus,User } from "lucide-react"
 import { logout } from "../../Redux/authSlice"
 import { toast } from "react-toastify"
 import CreateForm from "./CreateForm"
-import AllJobs from "./AllJobs"
+import AllJobs from "./ALL JOBS/AllJobs"
 import Analytics from "./Analytics"
 
 const Dashboard = () => {
